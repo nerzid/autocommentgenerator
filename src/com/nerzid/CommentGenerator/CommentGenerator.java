@@ -223,7 +223,7 @@ public class CommentGenerator implements CodeGenerator {
                     }
                 }
                 frame.dispose();
-                System.out.println("Tıklandı hocam devam");
+                System.out.println("Methods has been choosen.");
             }
         });
 
