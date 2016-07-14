@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.nerzid.module1;
+package com.nerzid.CommentGenerator;
 
 import com.sun.source.doctree.CommentTree;
 import com.sun.source.tree.AnnotationTree;
