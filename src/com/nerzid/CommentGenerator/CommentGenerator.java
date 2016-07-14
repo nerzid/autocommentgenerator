@@ -50,7 +50,6 @@ public class CommentGenerator implements CodeGenerator {
     JTextComponent textComp;
     ArrayList<String> methodNames;
     ArrayList<String> checkedMethodNames;
-    boolean isOkeyBtnClicked = false;
 
     /**
      *
@@ -73,7 +72,7 @@ public class CommentGenerator implements CodeGenerator {
      * The name which will be inserted inside Insert Code dialog
      */
     public String getDisplayName() {
-        return "Auto-generated Comments";
+        return "Auto-generate Comments";
     }
 
     /**
@@ -81,8 +80,6 @@ public class CommentGenerator implements CodeGenerator {
      * dialog
      */
     public void invoke() {
-        JOptionPane.showMessageDialog(null, "Hello there");
-
         methodNames = new ArrayList<>();
 
         try {
@@ -91,7 +88,6 @@ public class CommentGenerator implements CodeGenerator {
             CancellableTask task;
             task = new CancellableTask<WorkingCopy>() {
                 public void run(WorkingCopy workingCopy) throws IOException {
-
                     workingCopy.toPhase(Phase.RESOLVED);
                     CompilationUnitTree cut = workingCopy.getCompilationUnit();
                     TreeMaker make = workingCopy.getTreeMaker();
@@ -99,7 +95,7 @@ public class CommentGenerator implements CodeGenerator {
                         if (Tree.Kind.CLASS == typeDecl.getKind()) {
                             ClassTree clazz = (ClassTree) typeDecl;
 
-                            Comment ccc = Comment.create("comment for new method");
+                            Comment newMethodComment = Comment.create("comment for new method");
 
                             ModifiersTree methodModifiers
                                     = make.Modifiers(Collections.<Modifier>singleton(Modifier.PUBLIC),
@@ -125,48 +121,29 @@ public class CommentGenerator implements CodeGenerator {
                             ClassTree modifiedClazz = make.addClassMember(clazz, newMethod);
 
                             make.addComment(modifiedClazz, Comment.create("Buralar benim classimin topragam"), true);
-                            make.addComment(newMethod, ccc, true);
+                            make.addComment(newMethod, newMethodComment, true);
                             make.addComment(throwsClause, Comment.create("Burası expression tree"), true);
-                            make.addComment(parameter, Comment.create("burası variabletree yani parameter denilen kısım"), true);
-
-                            
+                            make.addComment(parameter, Comment.create("burası variabletree yani parameter denilen kısım"), true); 
                             
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
-                                //JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " asd: " + t.toString());
                                 MethodTree tk = (MethodTree) t;
                                 methodNames.add(tk.getName().toString());
-                                for (Tree tkt : tk.getBody().getStatements()) {
-                                    //JOptionPane.showMessageDialog(null, "Kind: " + tkt.getKind());
-                                }
                             }
 
                             prepareMethodChooser(clazz.getSimpleName().toString(), methodNames, workingCopy);
 
-                            //CommentHandlerService chs = new CommentHandlerService();
-                            
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
-                                System.out.println("KINDDDDDD: " + t.getKind());
-                                JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " asd: " + t.toString());
+                                JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " Body: " + t.toString());
                                 MethodTree tk = (MethodTree) t;
                                 String methodName = tk.getName().toString();
-                                
-                                
-                               
-                                if (checkedMethodNames.contains(methodName)) {
-                                    
-
-                                }
                                 make.addComment(tk, Comment.create(Comment.Style.JAVADOC,"This comment for the method named: " + methodName), true);
                             }
 
                             workingCopy.rewrite(clazz, modifiedClazz);
                         }
-//                        JOptionPane.showMessageDialog(null, "TypeDec: " + typeDecl.toString() + " , Kind: " + typeDecl.getKind());
-
                     }
-
                 }
 
                 public void cancel() {
@@ -200,16 +177,18 @@ public class CommentGenerator implements CodeGenerator {
         cbt.addCheckChangeEventListener(new JCheckBoxTree.CheckChangeEventListener() {
             public void checkStateChanged(JCheckBoxTree.CheckChangeEvent event) {
 
-                System.out.println("event");
+                System.out.println("Method Selection - CheckStateChanged");
                 TreePath[] paths = cbt.getCheckedPaths();
                 for (TreePath tp : paths) {
                     for (Object pathPart : tp.getPath()) {
-                        //System.out.print(pathPart + ",");
+                        System.out.print(pathPart + ",");
                     }
-                    //System.out.println();
+                    System.out.println();
                 }
             }
         });
+        
+        
         JButton okeyBtn = new JButton("Okey");
         okeyBtn.addActionListener(new ActionListener() {
             @Override
@@ -219,11 +198,10 @@ public class CommentGenerator implements CodeGenerator {
                     for (int i = 1; i < tp.getPath().length; i++) {
                         System.out.println(tp.getPath()[i].toString());
                         checkedMethodNames.add(tp.getPath()[i].toString());
-                        isOkeyBtnClicked = true;
                     }
                 }
                 frame.dispose();
-                System.out.println("Methods has been choosen.");
+                System.out.println("Methods have been choosen.");
             }
         });
 
