@@ -5,11 +5,11 @@
  */
 package com.nerzid.CommentGenerator;
 
-import com.sun.source.doctree.CommentTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
@@ -27,7 +27,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -36,6 +35,7 @@ import javax.swing.tree.TreePath;
 import org.netbeans.api.editor.mimelookup.MimeRegistration;
 import org.netbeans.api.java.source.CancellableTask;
 import org.netbeans.api.java.source.Comment;
+import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.JavaSource.Phase;
 import org.netbeans.api.java.source.ModificationResult;
@@ -123,8 +123,8 @@ public class CommentGenerator implements CodeGenerator {
                             make.addComment(modifiedClazz, Comment.create("Buralar benim classimin topragam"), true);
                             make.addComment(newMethod, newMethodComment, true);
                             make.addComment(throwsClause, Comment.create("Burası expression tree"), true);
-                            make.addComment(parameter, Comment.create("burası variabletree yani parameter denilen kısım"), true); 
-                            
+                            //make.addComment(parameter, Comment.create("burası variabletree yani parameter denilen kısım"), true); 
+
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
                                 MethodTree tk = (MethodTree) t;
@@ -135,10 +135,25 @@ public class CommentGenerator implements CodeGenerator {
 
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
-                                JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " Body: " + t.toString());
+                                //JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " Body: " + t.toString());
                                 MethodTree tk = (MethodTree) t;
                                 String methodName = tk.getName().toString();
-                                make.addComment(tk, Comment.create(Comment.Style.JAVADOC,"This comment for the method named: " + methodName), true);
+                                make.insertComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), 0, true);
+
+                                IdentifierTree commentTree = make.Identifier("/* This is annotation comment */");//Annotation's comment
+                                ExpressionTree annTypeTree = make.QualIdent("NerzidComment");//Annotation's name
+
+                                AnnotationTree newAnnotation = make.Annotation(annTypeTree, Collections.singletonList(commentTree));
+
+                                ModifiersTree tkModifiersTree = tk.getModifiers();
+                                tkModifiersTree = make.addModifiersAnnotation(tkModifiersTree, newAnnotation);
+
+                                workingCopy.rewrite(tk.getModifiers(), tkModifiersTree);
+
+                                make.addPackageAnnotation(cut, newAnnotation);
+
+                                make.addComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), true);
+
                             }
 
                             workingCopy.rewrite(clazz, modifiedClazz);
@@ -158,6 +173,7 @@ public class CommentGenerator implements CodeGenerator {
 
     }
 
+    @NerzidComment(comment = "Hello there")
     private void prepareMethodChooser(String className, ArrayList<String> methodNames, WorkingCopy workingCopy) {
         final JFrame frame = new JFrame("Select Methods");
         frame.getContentPane().setLayout(new BorderLayout());
@@ -187,8 +203,7 @@ public class CommentGenerator implements CodeGenerator {
                 }
             }
         });
-        
-        
+
         JButton okeyBtn = new JButton("Okey");
         okeyBtn.addActionListener(new ActionListener() {
             @Override
