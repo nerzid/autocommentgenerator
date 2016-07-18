@@ -153,7 +153,6 @@ public class CommentGenerator implements CodeGenerator {
                                 make.addPackageAnnotation(cut, newAnnotation);
 
                                 make.addComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), true);
-
                             }
 
                             workingCopy.rewrite(clazz, modifiedClazz);
@@ -173,7 +172,7 @@ public class CommentGenerator implements CodeGenerator {
 
     }
 
-    @NerzidComment(comment = "Hello there")
+    @NerzidComment
     private void prepareMethodChooser(String className, ArrayList<String> methodNames, WorkingCopy workingCopy) {
         final JFrame frame = new JFrame("Select Methods");
         frame.getContentPane().setLayout(new BorderLayout());
