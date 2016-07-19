@@ -67,7 +67,7 @@ public class CommentGenerator implements CodeGenerator {
             return Collections.singletonList(new CommentGenerator(context));
         }
     }
-    
+
     /**
      * The name which will be inserted inside Insert Code dialog
      */
@@ -81,12 +81,12 @@ public class CommentGenerator implements CodeGenerator {
      */
     public void invoke() {
         methodNames = new ArrayList<>();
-        
+
         try {
             Document doc = textComp.getDocument();
-            
+
             JavaSource javaSource = JavaSource.forDocument(doc);
-            
+
             CancellableTask task;
             task = new CancellableTask<WorkingCopy>() {
                 public void run(WorkingCopy workingCopy) throws IOException {
@@ -110,9 +110,7 @@ public class CommentGenerator implements CodeGenerator {
                                             null);
                             TypeElement element = workingCopy.getElements().getTypeElement("java.io.IOException");
                             ExpressionTree throwsClause = make.QualIdent(element);
-                            
-                            
-                            
+
                             MethodTree newMethod
                                     = make.Method(methodModifiers,
                                             "writeExternal",
@@ -129,8 +127,7 @@ public class CommentGenerator implements CodeGenerator {
                             make.addComment(newMethod, newMethodComment, true);
                             make.addComment(throwsClause, Comment.create("Burası expression tree"), true);
                             //make.addComment(parameter, Comment.create("burası variabletree yani parameter denilen kısım"), true); 
-                            
-                                    
+
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
                                 MethodTree tk = (MethodTree) t;
@@ -144,36 +141,51 @@ public class CommentGenerator implements CodeGenerator {
                                 //JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " Body: " + t.toString());
                                 MethodTree tk = (MethodTree) t;
                                 String methodName = tk.getName().toString();
-                                
-                                //Skip Constructor
-                                if(methodName.equals("<init>"))
-                                    continue;
-                                
-                                make.insertComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), 0, true);
 
+                                //Skip Constructor
+                                if (methodName.equals("<init>")) {
+                                    continue;
+                                }
+
+                                //Skip, if already AutoComment Annotation has been added before.
+                                boolean isAutoCommentAnnExist = false;
+                                for (AnnotationTree ann : tk.getModifiers().getAnnotations()) {
+                                    if (ann.getAnnotationType().equals(AutoComment.class.getSimpleName()));
+                                    {
+                                        isAutoCommentAnnExist = true;
+                                        break;
+                                    }
+                                }
+
+                                if (isAutoCommentAnnExist) {
+                                    continue;
+                                }
+
+//                                make.insertComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), 0, true);
 //                                IdentifierTree commentTree = make.Identifier("/* This is annotation comment */");//Annotation's comment
                                 ExpressionTree annTypeTree = make.QualIdent("AutoComment");//Annotation's name
-                                IdentifierTree annotationArgs = make.Identifier("\ncomment=\"" + "This comment is method named: " + methodName + "\"," +
-                                        "\nid=\"idNo\"");
+                                IdentifierTree annotationArgs = make.Identifier("\ncomment=\"" + "This comment is method named: " + methodName + "\","
+                                        + "\nid=\"idNo\"");
                                 AnnotationTree newAnnotation = make.Annotation(annTypeTree, Collections.singletonList(annotationArgs));
-                                
+
                                 System.out.println("Type: " + newAnnotation.getAnnotationType());
                                 System.out.println("annotation arguments: " + newAnnotation.getArguments());
                                 ModifiersTree tkModifiersTree = tk.getModifiers();
                                 tkModifiersTree = make.addModifiersAnnotation(tkModifiersTree, newAnnotation);
-                                
+
                                 workingCopy.rewrite(tk.getModifiers(), tkModifiersTree);
 
                                 make.addPackageAnnotation(cut, newAnnotation);
 
                                 make.addComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), true);
+
                             }
 
                             workingCopy.rewrite(clazz, modifiedClazz);
 
                             //Add import for AutoComment Annotation
-                            CompilationUnitTree copy = make.addCompUnitImport(cut, 
-                                    make.Import(make.Identifier(AutoComment.class.getCanonicalName()), false));  
+                            CompilationUnitTree copy = make.addCompUnitImport(cut,
+                                    make.Import(make.Identifier(AutoComment.class.getCanonicalName()), false));
                             workingCopy.rewrite(cut, copy);
                         }
                     }
