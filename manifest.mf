@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 AutoUpdate-Show-In-Client: true
 OpenIDE-Module: com.nerzid.module1
+OpenIDE-Module-Layer: com/nerzid/CommentGenerator/layer.xml
 OpenIDE-Module-Localizing-Bundle: com/nerzid/CommentGenerator/Bundle.properties
 OpenIDE-Module-Specification-Version: 1.0
 
