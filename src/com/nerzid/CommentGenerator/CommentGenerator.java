@@ -63,6 +63,7 @@ public class CommentGenerator implements CodeGenerator {
     @MimeRegistration(mimeType = "text/x-java", service = CodeGenerator.Factory.class)
     public static class Factory implements CodeGenerator.Factory {
 
+        @Override
         public List<? extends CodeGenerator> create(Lookup context) {
             return Collections.singletonList(new CommentGenerator(context));
         }
@@ -71,6 +72,7 @@ public class CommentGenerator implements CodeGenerator {
     /**
      * The name which will be inserted inside Insert Code dialog
      */
+    @Override
     public String getDisplayName() {
         return "Auto-generate Comments";
     }
@@ -79,19 +81,22 @@ public class CommentGenerator implements CodeGenerator {
      * This will be invoked when user chooses this Generator from Insert Code
      * dialog
      */
+    @Override
     public void invoke() {
         methodNames = new ArrayList<>();
 
         try {
             Document doc = textComp.getDocument();
-
+            
             JavaSource javaSource = JavaSource.forDocument(doc);
-
+         
             CancellableTask task;
             task = new CancellableTask<WorkingCopy>() {
+                @Override
                 public void run(WorkingCopy workingCopy) throws IOException {
                     workingCopy.toPhase(Phase.RESOLVED);
                     CompilationUnitTree cut = workingCopy.getCompilationUnit();
+                    
                     TreeMaker make = workingCopy.getTreeMaker();
                     for (Tree typeDecl : cut.getTypeDecls()) {
                         if (Tree.Kind.CLASS == typeDecl.getKind()) {
@@ -130,6 +135,8 @@ public class CommentGenerator implements CodeGenerator {
 
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
+                                if(t.getKind() != Tree.Kind.METHOD)
+                                    continue;
                                 MethodTree tk = (MethodTree) t;
                                 methodNames.add(tk.getName().toString());
                             }
@@ -139,6 +146,8 @@ public class CommentGenerator implements CodeGenerator {
                             for (Tree t : modifiedClazz.getMembers())//Class' members, basically they are methods.
                             {
                                 //JOptionPane.showMessageDialog(null, "Kind: " + t.getKind() + " Body: " + t.toString());
+                                if(t.getKind() != Tree.Kind.METHOD)
+                                    continue;
                                 MethodTree tk = (MethodTree) t;
                                 String methodName = tk.getName().toString();
 
@@ -150,17 +159,17 @@ public class CommentGenerator implements CodeGenerator {
                                 //Skip, if already AutoComment Annotation has been added before.
                                 boolean isAutoCommentAnnExist = false;
                                 for (AnnotationTree ann : tk.getModifiers().getAnnotations()) {
-                                    if (ann.getAnnotationType().equals(AutoComment.class.getSimpleName()));
+                                    if (ann.getAnnotationType().toString().equals(AutoComment.class.getSimpleName()));
                                     {
                                         isAutoCommentAnnExist = true;
                                         break;
                                     }
                                 }
-
+                                
                                 if (isAutoCommentAnnExist) {
                                     continue;
                                 }
-
+                                
 //                                make.insertComment(tk, Comment.create(Comment.Style.JAVADOC, "This comment for the method named: " + methodName), 0, true);
 //                                IdentifierTree commentTree = make.Identifier("/* This is annotation comment */");//Annotation's comment
                                 ExpressionTree annTypeTree = make.QualIdent("AutoComment");//Annotation's name
@@ -191,13 +200,14 @@ public class CommentGenerator implements CodeGenerator {
                     }
                 }
 
+                @Override
                 public void cancel() {
                 }
             };
             ModificationResult result = javaSource.runModificationTask(task);
             result.commit();
 
-        } catch (Exception ex) {
+        } catch (IllegalArgumentException | IOException ex) {
             Exceptions.printStackTrace(ex);
         }
 
@@ -220,6 +230,7 @@ public class CommentGenerator implements CodeGenerator {
         dtm.reload(top);
         checkedMethodNames = new ArrayList<>();
         cbt.addCheckChangeEventListener(new JCheckBoxTree.CheckChangeEventListener() {
+            @Override
             public void checkStateChanged(JCheckBoxTree.CheckChangeEvent event) {
 
                 System.out.println("Method Selection - CheckStateChanged");
